@@ -13,3 +13,7 @@ main.rs
 ```
 
 ## Test
+
+```bash
+pytest tests
+```

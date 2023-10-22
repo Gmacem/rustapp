@@ -1,0 +1,16 @@
+[package]
+name = "rustapp"
+version = "0.1.0"
+edition = "2021"
+description = "A console program for Rust course"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.6", features = ["derive"] }
+env_logger = "0.10.0"
+log = "0.4.20"
+
+[[bin]]
+name = "rustapp"
+path = "src/main.rs"

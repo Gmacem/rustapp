@@ -1,7 +1,9 @@
+mod find { pub mod app; pub mod args; }
 mod ls;
 
-use crate::apps::ls::app::LsApp;
-use crate::apps::ls::LsArgs;
+use crate::apps::ls::{ LsArgs, app::LsApp };
+use crate::apps::find::{ args::FindAppArgs, app::FindApp };
+
 use clap::{Parser, Subcommand};
 use log::error;
 use std::env::current_dir;
@@ -18,6 +20,9 @@ struct Cli {
 enum Commands {
     /// A subcommand for showing a list of files by path
     Ls(LsArgs),
+
+    /// A subcommand for finding files in a directory
+    Find(FindAppArgs)
 }
 
 pub fn run() -> Result<(), ()>{
@@ -32,6 +37,17 @@ pub fn run() -> Result<(), ()>{
                     error!("Failed to get a list of files: {}", err);
                     return Err(());
                 },
+            }
+        }
+        Commands::Find(args) => {
+            let current_dir = current_dir().unwrap_or_default();
+            let find_app = FindApp::new(current_dir);
+            match find_app.run(io::stdout(), args) {
+                Ok(_) => Ok(()),
+                Err(err) => {
+                    error!("Failed to find files: {}", err);
+                    return Err(());
+                }
             }
         }
     }

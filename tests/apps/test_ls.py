@@ -1,16 +1,13 @@
-import pathlib
 import pytest
 import os
-
-
-root_dir = pathlib.Path(__file__).parent.resolve()
-
+from . import ROOT_DIR
 
 @pytest.mark.parametrize('path, expected',
                          [
                              ('./fakes/fs', ['file_1.txt', 'file_2.txt', 'file_3.txt']),
-                             ('./fakes/fs/folder_1', ['']),
-                             (os.path.join(root_dir, '../fakes/fs'), ['file_1.txt', 'file_2.txt', 'file_3.txt'])
+                             ('./fakes/fs/folder_1', ['folder_1']),
+                             ('./fakes/fs/folder_2', ['']),
+                             (os.path.join(ROOT_DIR, './fakes/fs'), ['file_1.txt', 'file_2.txt', 'file_3.txt']),
                          ])
 def test_ls_ok(
     main_app,
@@ -28,7 +25,7 @@ def test_ls_ok(
                          [
                              ('./fakes/fs1'),
                              ('./fakes'),
-                             (os.path.join(root_dir, '../fakes/fs1'))
+                             (os.path.join(ROOT_DIR, './fakes/fs1'))
                          ])
 def test_ls_error(
     main_app,

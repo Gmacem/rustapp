@@ -1,0 +1,33 @@
+from . import ROOT_DIR
+import pytest
+import os
+
+path_to_fakes = os.path.join(ROOT_DIR, 'fakes/fs')
+
+@pytest.mark.parametrize('path, filename, expected',
+[
+    ('./fakes/fs', 'file_1.txt', 
+        [
+            os.path.join(path_to_fakes, 'file_1.txt'),
+            os.path.join(path_to_fakes, 'folder_1/folder_1_1/file_1.txt'),
+            os.path.join(path_to_fakes, 'folder_1/folder_1_2/file_1.txt'),
+        ]),
+    ('./fakes/fs', 'folder_1', 
+        [
+            os.path.join(path_to_fakes, 'folder_1'),
+            os.path.join(path_to_fakes, 'folder_1/folder_1'),
+        ]),
+    ('./fakes/fs', 'missing_folder', 
+        ['']),
+])
+def test_find_ok(
+    main_app,
+    path,
+    filename,
+    expected,
+):
+    out, err = main_app.find(path, filename)
+    assert len(err) == 0, err
+
+    files = out.decode().rstrip('\n').split('\n')
+    assert files == expected, out

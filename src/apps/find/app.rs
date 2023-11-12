@@ -1,7 +1,7 @@
 use log::{warn, error};
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 use crate::apps::find::args::FindAppArgs;
 use crate::controllers::fs::{Fs, FsController};
@@ -48,14 +48,14 @@ impl FindApp {
     fn find_file_recursive(
         &self,
         filename: &str,
-        current_dir: &PathBuf,
+        current_dir: &Path,
     ) -> Result<Vec<PathBuf>, String> {
-        let files_and_dirs = match self.fs.get_list_dir(current_dir.as_path()) {
+        let files_and_dirs = match self.fs.get_list_dir(current_dir) {
             Ok(files_and_dirs) => files_and_dirs,
             Err(err) => {
                 warn!(
                     "failed to get files in a directory {} by a reason: {}",
-                    current_dir.as_path().display(),
+                    current_dir.display(),
                     err
                 );
                 return Err(err);

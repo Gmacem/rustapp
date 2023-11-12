@@ -9,10 +9,10 @@ pub struct LsApp {
 
 impl LsApp {
     pub fn new(root: PathBuf) -> LsApp {
-        return LsApp {
+        LsApp {
             fs: Fs {},
-            root: root,
-        };
+            root,
+        }
     }
 
     pub fn print_files(&self, mut writer: impl Write, str_path: String) -> Result<(), String> {
@@ -36,7 +36,7 @@ impl LsApp {
                 Err(err) => return Err(err.to_string()),
             }
         }
-        return Ok(());
+        Ok(())
     }
 
     fn get_abs_path_from_str(&self, str_path: String) -> PathBuf {
@@ -45,7 +45,7 @@ impl LsApp {
         if path.is_relative() {
             return self.root.join(path);
         }
-        return path;
+        path
     }
 
     fn get_files_in_dir(&self, path: &Path) -> Result<Vec<PathBuf>, String> {
@@ -56,6 +56,6 @@ impl LsApp {
         .into_iter()
         .filter(|path| self.fs.is_file(path))
         .collect();
-        return Ok(list_files);
+        Ok(list_files)
     }
 }

@@ -35,7 +35,7 @@ pub fn run() -> Result<(), ()>{
                 Ok(_) => Ok(()),
                 Err(err) => {
                     error!("Failed to get a list of files: {}", err);
-                    return Err(());
+                    Err(())
                 },
             }
         }
@@ -46,7 +46,7 @@ pub fn run() -> Result<(), ()>{
                 Ok(_) => Ok(()),
                 Err(err) => {
                     error!("Failed to find files: {}", err);
-                    return Err(());
+                    Err(())
                 }
             }
         }

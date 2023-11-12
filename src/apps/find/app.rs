@@ -13,10 +13,10 @@ pub struct FindApp {
 
 impl FindApp {
     pub fn new(root: PathBuf) -> FindApp {
-        return FindApp {
+        FindApp {
             fs: Fs {},
-            root: root,
-        };
+            root,
+        }
     }
 
     pub fn run(&self, writer: impl Write, args: &FindAppArgs) -> Result<(), String> {
@@ -24,7 +24,7 @@ impl FindApp {
             Ok(founds) => founds,
             Err(err) => return Err(err),
         };
-        return self.print_files(writer, founds);
+        self.print_files(writer, founds)
     }
 
     fn print_files(&self, mut writer: impl Write, files: Vec<PathBuf>) -> Result<(), String> {
@@ -38,17 +38,17 @@ impl FindApp {
                 }
             };
         }
-        return Ok(());
+        Ok(())
     }
 
     fn find_files(&self, filename: &str) -> Result<Vec<PathBuf>, String> {
-        return self.find_file_recursive(filename, self.root.clone());
+        self.find_file_recursive(filename, &self.root)
     }
 
     fn find_file_recursive(
         &self,
         filename: &str,
-        current_dir: PathBuf,
+        current_dir: &PathBuf,
     ) -> Result<Vec<PathBuf>, String> {
         let files_and_dirs = match self.fs.get_list_dir(current_dir.as_path()) {
             Ok(files_and_dirs) => files_and_dirs,
@@ -70,16 +70,16 @@ impl FindApp {
                 .unwrap_or_default()
                 .to_str()
                 .unwrap_or_default();
-            if name == filename {
-                result.push(file.clone());
-            }
             if self.fs.is_dir(file.as_path()) {
-                if let Ok(founds) = self.find_file_recursive(filename, file.to_path_buf()) {
+                if let Ok(founds) = self.find_file_recursive(filename, &file.to_path_buf()) {
                     result.extend(founds);
                 }
             }
+            if name == filename {
+                result.push(file);
+            }
         }
 
-        return Ok(result);
+        Ok(result)
     }
 }

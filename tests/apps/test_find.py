@@ -14,8 +14,8 @@ path_to_fakes = os.path.join(ROOT_DIR, 'fakes/fs')
         ]),
     ('./fakes/fs', 'folder_1', 
         [
-            os.path.join(path_to_fakes, 'folder_1'),
             os.path.join(path_to_fakes, 'folder_1/folder_1'),
+            os.path.join(path_to_fakes, 'folder_1'),
         ]),
     ('./fakes/fs', 'missing_folder', 
         ['']),

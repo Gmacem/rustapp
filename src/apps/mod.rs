@@ -31,11 +31,11 @@ pub fn run() -> Result<(), ()>{
         Commands::Ls(args) => {
             let current_dir = current_dir().unwrap_or_default();
             let ls_app = LsApp::new(current_dir);
-            match ls_app.print_files(io::stdout(), args.path.clone()) {
+            match ls_app.print_files(io::stdout(), args) {
                 Ok(_) => Ok(()),
                 Err(err) => {
                     error!("Failed to get a list of files: {}", err);
-                    return Err(());
+                    Err(())
                 },
             }
         }
@@ -46,7 +46,7 @@ pub fn run() -> Result<(), ()>{
                 Ok(_) => Ok(()),
                 Err(err) => {
                     error!("Failed to find files: {}", err);
-                    return Err(());
+                    Err(())
                 }
             }
         }

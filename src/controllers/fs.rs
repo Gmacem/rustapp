@@ -28,20 +28,20 @@ impl FsController for Fs {
                 Err(err) => return Err(err.to_string()),
             }
         }
-        return Ok(result);
+        Ok(result)
     }
 
     fn is_file(&self, path: &Path) -> bool {
-        return match metadata(path) {
+        match metadata(path) {
             Ok(md) => md.is_file(),
             Err(_) => false,
-        };
+        }
     }
 
     fn is_dir(&self, path: &Path) -> bool {
-        return match metadata(path) {
+        match metadata(path) {
             Ok(md) => md.is_dir(),
             Err(_) => false,
-        };
+        }
     }
 }

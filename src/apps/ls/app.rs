@@ -2,6 +2,8 @@ use crate::controllers::fs::{Fs, FsController};
 use std::io::Write;
 use std::{os::unix::prelude::OsStrExt, path::Path, path::PathBuf};
 
+use super::LsArgs;
+
 pub struct LsApp {
     fs: Fs,
     root: PathBuf,
@@ -9,14 +11,14 @@ pub struct LsApp {
 
 impl LsApp {
     pub fn new(root: PathBuf) -> LsApp {
-        return LsApp {
+        LsApp {
             fs: Fs {},
-            root: root,
-        };
+            root,
+        }
     }
 
-    pub fn print_files(&self, mut writer: impl Write, str_path: String) -> Result<(), String> {
-        let path_buf = self.get_abs_path_from_str(str_path);
+    pub fn print_files(&self, mut writer: impl Write, args: &LsArgs) -> Result<(), String> {
+        let path_buf = self.get_abs_path_from_str(&args.path);
         let path = path_buf.as_path();
         let list_files = match self.get_files_in_dir(path) {
             Ok(list_files) => list_files,
@@ -36,16 +38,16 @@ impl LsApp {
                 Err(err) => return Err(err.to_string()),
             }
         }
-        return Ok(());
+        Ok(())
     }
 
-    fn get_abs_path_from_str(&self, str_path: String) -> PathBuf {
+    fn get_abs_path_from_str(&self, str_path: &String) -> PathBuf {
         let mut path = PathBuf::new();
         path.push(str_path);
         if path.is_relative() {
             return self.root.join(path);
         }
-        return path;
+        path
     }
 
     fn get_files_in_dir(&self, path: &Path) -> Result<Vec<PathBuf>, String> {
@@ -56,6 +58,6 @@ impl LsApp {
         .into_iter()
         .filter(|path| self.fs.is_file(path))
         .collect();
-        return Ok(list_files);
+        Ok(list_files)
     }
 }

@@ -6,7 +6,7 @@ from . import ROOT_DIR
                          [
                              ('./fakes/fs', ['file_1.txt', 'file_2.txt', 'file_3.txt']),
                              ('./fakes/fs/folder_1', ['folder_1']),
-                             ('./fakes/fs/folder_2', ['']),
+                             ('./fakes/fs/folder_2', ['file_2.txt']),
                              (os.path.join(ROOT_DIR, './fakes/fs'), ['file_1.txt', 'file_2.txt', 'file_3.txt']),
                          ])
 def test_ls_ok(

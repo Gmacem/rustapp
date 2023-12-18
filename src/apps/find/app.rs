@@ -1,6 +1,3 @@
-
-
-
 use std::path::{PathBuf};
 
 use crate::apps::find::args::FindAppArgs;
@@ -8,8 +5,6 @@ use crate::apps::find::strategies::{
     Context, FindProcess, PostProcessStrategy, PrintConsoleStrategy, PrintFileStrategy,
     PrintStrategy, ProcessStrategy,
 };
-
-
 
 use super::strategies::{SortStrategy, MultiplePostProcess, InTextFileFilter};
 

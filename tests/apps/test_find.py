@@ -4,6 +4,7 @@ import os
 
 path_to_fakes = os.path.join(ROOT_DIR, 'fakes/fs')
 
+
 @pytest.mark.parametrize('path, filename, expected',
 [
     ('./fakes/fs', 'file_1.txt', 
@@ -31,3 +32,14 @@ def test_find_ok(
 
     files = out.decode().rstrip('\n').split('\n')
     assert files == expected, out
+
+
+def test_find_with_sort(
+    main_app
+):
+    out, err = main_app.find('./fakes/fs', 'file_1.txt', sort=True)
+    assert len(err) == 0, err
+
+    files = out.decode().rstrip('\n').split('\n')
+    for i in range(0, len(files) - 1):
+        assert files[i] < files[i+1]

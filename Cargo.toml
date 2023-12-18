@@ -10,6 +10,7 @@ description = "A console program for Rust course"
 clap = { version = "4.4.6", features = ["derive"] }
 env_logger = "0.10.0"
 log = "0.4.20"
+rand = "0.8.5"
 
 [[bin]]
 name = "rustapp"

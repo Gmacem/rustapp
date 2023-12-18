@@ -1,4 +1,4 @@
-mod find { pub mod app; pub mod args; }
+mod find { pub mod app; pub mod args; mod strategies; }
 mod ls;
 
 use crate::apps::ls::{ LsArgs, app::LsApp };
@@ -41,8 +41,8 @@ pub fn run() -> Result<(), ()>{
         }
         Commands::Find(args) => {
             let current_dir = current_dir().unwrap_or_default();
-            let find_app = FindApp::new(current_dir);
-            match find_app.run(io::stdout(), args) {
+            let mut find_app = FindApp::new(current_dir, args);
+            match find_app.run() {
                 Ok(_) => Ok(()),
                 Err(err) => {
                     error!("Failed to find files: {}", err);

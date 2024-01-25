@@ -1,85 +1,72 @@
-use log::{warn, error};
-use std::fs;
-use std::io::Write;
-use std::path::{PathBuf, Path};
+use std::path::{PathBuf};
 
 use crate::apps::find::args::FindAppArgs;
-use crate::controllers::fs::{Fs, FsController};
+use crate::apps::find::strategies::{
+    Context, FindProcess, PostProcessStrategy, PrintConsoleStrategy, PrintFileStrategy,
+    PrintStrategy, ProcessStrategy,
+};
+
+use super::strategies::{SortStrategy, MultiplePostProcess, InTextFileFilter};
 
 pub struct FindApp {
-    fs: Fs,
-    root: PathBuf,
+    request: String,
+    process_strategy: Box<dyn ProcessStrategy>,
+    post_process_strategy: Option<Box<dyn PostProcessStrategy>>,
+    print_strategy: Option<Box<dyn PrintStrategy>>,
 }
 
 impl FindApp {
-    pub fn new(root: PathBuf) -> FindApp {
-        FindApp {
-            fs: Fs {},
-            root,
+    pub fn new(root: PathBuf, args: FindAppArgs) -> FindApp {
+        let mut find_app = FindApp {
+            request: args.name,
+            process_strategy: Box::new(FindProcess::new(root)),
+            post_process_strategy: None,
+            print_strategy: None,
+        };
+        let mut post_strategies = Box::new(MultiplePostProcess::new());
+        if args.sort {
+            post_strategies.add_strategy(Box::new(SortStrategy {}));
         }
+        if let Some(content) = args.in_file {
+            let content = content.clone();
+            post_strategies.add_strategy(Box::new(InTextFileFilter::new(content)));
+        }
+
+        find_app.post_process_strategy = Some(post_strategies);
+        
+        if args.filename.is_some() {
+            let filename = args.filename.as_ref().unwrap();
+            let path = PathBuf::from(filename);
+            find_app.print_strategy = Some(Box::new(PrintFileStrategy::new(path)));
+        } else {
+            find_app.print_strategy = Some(Box::new(PrintConsoleStrategy {}));
+        }
+        find_app
     }
 
-    pub fn run(&self, writer: impl Write, args: &FindAppArgs) -> Result<(), String> {
-        let founds = match self.find_files(&args.name) {
-            Ok(founds) => founds,
+    pub fn run(&mut self) -> Result<(), String> {
+        let mut context = Context {
+            name: self.request.clone(),
+            files: Vec::new(),
+        };
+        match self.process_strategy.process(&mut context) {
+            Ok(()) => (),
             Err(err) => return Err(err),
         };
-        self.print_files(writer, founds)
-    }
-
-    fn print_files(&self, mut writer: impl Write, files: Vec<PathBuf>) -> Result<(), String> {
-        for file in files {
-            let fullpath = fs::canonicalize(file).unwrap_or_default();
-            match writer.write(format!("{}\n", fullpath.display()).as_bytes()) {
-                Ok(_) => (),
-                Err(err) => {
-                    error!("Failed to print a file: {}", err);
-                    return Err(err.to_string());
-                }
-            };
+        if let Some(ref mut strategy) = self.post_process_strategy {
+            match strategy
+                .post_process(&mut context)
+            {
+                Ok(()) => (),
+                Err(err) => return Err(err),
+            }
+        }
+        if let Some(ref mut print_strategy) = self.print_strategy {
+            match print_strategy.print(&mut context) {
+                Ok(()) => (),
+                Err(err) => return Err(err),
+            }
         }
         Ok(())
-    }
-
-    fn find_files(&self, filename: &str) -> Result<Vec<PathBuf>, String> {
-        self.find_file_recursive(filename, &self.root)
-    }
-
-    fn find_file_recursive(
-        &self,
-        filename: &str,
-        current_dir: &Path,
-    ) -> Result<Vec<PathBuf>, String> {
-        let files_and_dirs = match self.fs.get_list_dir(current_dir) {
-            Ok(files_and_dirs) => files_and_dirs,
-            Err(err) => {
-                warn!(
-                    "failed to get files in a directory {} by a reason: {}",
-                    current_dir.display(),
-                    err
-                );
-                return Err(err);
-            }
-        };
-
-        let mut result = Vec::new();
-
-        for file in files_and_dirs {
-            let name = file
-                .file_name()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default();
-            if self.fs.is_dir(file.as_path()) {
-                if let Ok(founds) = self.find_file_recursive(filename, &file.to_path_buf()) {
-                    result.extend(founds);
-                }
-            }
-            if name == filename {
-                result.push(file);
-            }
-        }
-
-        Ok(result)
     }
 }

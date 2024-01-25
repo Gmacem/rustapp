@@ -17,7 +17,7 @@ impl LsApp {
         }
     }
 
-    pub fn print_files(&self, mut writer: impl Write, args: &LsArgs) -> Result<(), String> {
+    pub fn print_files(&self, mut writer: impl Write, args: LsArgs) -> Result<(), String> {
         let path_buf = self.get_abs_path_from_str(&args.path);
         let path = path_buf.as_path();
         let list_files = match self.get_files_in_dir(path) {

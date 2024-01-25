@@ -20,11 +20,14 @@ class Application:
         process.wait()
         return process.communicate()
 
-    def find(self, path, filename, sort=False):
+    def find(self, path, filename, sort=False, in_file=None):
         exec_path = os.path.join(root_dir, path)
-        command = [f'cd {exec_path} && /tmp/debug/rustapp find {filename}']
+        command = f'cd {exec_path} && /tmp/debug/rustapp find {filename}'
         if sort:
-            command += ['--sort']
+            command += ' --sort'
+        if in_file is not None:
+            command += f' --in-file "{in_file}"'
+        print(command)
         process = subprocess.Popen(command,
             shell=True,
             stdout=subprocess.PIPE,

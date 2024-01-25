@@ -91,7 +91,7 @@ impl FindProcess {
                 let cur_filename: &str = file.as_path().to_str().unwrap();
                 if self.fs.is_dir(file.as_path()) {
                     result.push(Occurence::Dir(OccurenceData{path: file}));
-                } else if cur_filename.ends_with(".txt") {
+                } else if cur_filename.ends_with(".txt") || cur_filename.ends_with(".rs") {
                     result.push(Occurence::TextFile(OccurenceData{path: file}));
                 } else {
                     result.push(Occurence::File(OccurenceData{path: file}));
@@ -175,24 +175,49 @@ impl PrintStrategy for PrintConsoleStrategy {
 pub struct InTextFileFilter {
   content: String,
 }
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
+use std::thread::Scope;
+use std::thread;
+use std::cmp;
+
+const NUM_THREADS: usize = 64;
 
 impl PostProcessStrategy for InTextFileFilter {
   fn post_process(&mut self, context: &mut Context) -> Result<(), String> {
-      context.files.retain(|occurence| {
-          if let Occurence::TextFile(data) = occurence {
-            match fs::read_to_string(&data.path) {
-                Ok(data) => data.contains(&self.content),
-                Err(err) => {
-                    warn!("Failed to read file {}: {}", data.path.display(), err);
-                    false
-                }
+    let batch_size = context.files.len() / NUM_THREADS + 1;
+    let files = &context.files;
+    let mut found: Vec<Occurence> = Vec::new();
+    thread::scope(|s: &Scope| {
+      let (tx, rx): (Sender<Occurence>, Receiver<Occurence>) = mpsc::channel();
+      for i in 0..NUM_THREADS {
+        let tx_clone = tx.clone();
+        let content = &self.content;
+          s.spawn(move || {
+          let mut left_bound = batch_size * i;
+          let right_bound = cmp::min(batch_size * (i + 1), files.len());
+          while left_bound < right_bound {
+            if let Occurence::TextFile(occ) = &files[left_bound] {
+              match fs::read_to_string(&occ.path) {
+                Ok(data) => { 
+                  if data.contains(content) {
+                    tx_clone.send(Occurence::File(OccurenceData{path: occ.path.clone()})).unwrap(); 
+                  }
+                },
+                Err(err) => {warn!("Failed to read file {}: {}", occ.path.display(), err); } ,
+              };
             }
-          } else {
-            return false;
+          left_bound += 1;
           }
-      });
-
-      Ok(())
+        });
+      }
+      drop(tx);
+      for occ in rx {
+        found.push(occ);
+      }
+    });
+    context.files = found;
+    Ok(())
   }
 }
 

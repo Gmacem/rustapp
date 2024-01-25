@@ -28,7 +28,7 @@ impl FindApp {
             post_strategies.add_strategy(Box::new(SortStrategy {}));
         }
         if let Some(content) = args.in_file {
-            let content = content.clone();
+            let content = content;
             post_strategies.add_strategy(Box::new(InTextFileFilter::new(content)));
         }
 

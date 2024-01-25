@@ -16,9 +16,9 @@ pub struct FindApp {
 }
 
 impl FindApp {
-    pub fn new(root: PathBuf, args: &FindAppArgs) -> FindApp {
+    pub fn new(root: PathBuf, args: FindAppArgs) -> FindApp {
         let mut find_app = FindApp {
-            request: args.name.clone(),
+            request: args.name,
             process_strategy: Box::new(FindProcess::new(root)),
             post_process_strategy: None,
             print_strategy: None,
@@ -27,7 +27,7 @@ impl FindApp {
         if args.sort {
             post_strategies.add_strategy(Box::new(SortStrategy {}));
         }
-        if let Some(ref content) = args.in_file {
+        if let Some(content) = args.in_file {
             let content = content.clone();
             post_strategies.add_strategy(Box::new(InTextFileFilter::new(content)));
         }
@@ -53,19 +53,16 @@ impl FindApp {
             Ok(()) => (),
             Err(err) => return Err(err),
         };
-        if self.post_process_strategy.is_some() {
-            match self
-                .post_process_strategy
-                .as_mut()
-                .unwrap()
+        if let Some(ref mut strategy) = self.post_process_strategy {
+            match strategy
                 .post_process(&mut context)
             {
                 Ok(()) => (),
                 Err(err) => return Err(err),
             }
         }
-        if self.print_strategy.is_some() {
-            match self.print_strategy.as_mut().unwrap().print(&mut context) {
+        if let Some(ref mut print_strategy) = self.print_strategy {
+            match print_strategy.print(&mut context) {
                 Ok(()) => (),
                 Err(err) => return Err(err),
             }

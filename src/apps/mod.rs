@@ -27,7 +27,7 @@ enum Commands {
 
 pub fn run() -> Result<(), ()>{
     let cli = Cli::parse();
-    match &cli.command {
+    match cli.command {
         Commands::Ls(args) => {
             let current_dir = current_dir().unwrap_or_default();
             let ls_app = LsApp::new(current_dir);

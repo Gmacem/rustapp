@@ -8,16 +8,22 @@ use crate::utils::sort;
 
 use std::fs::OpenOptions;
 
-#[derive(PartialEq, Eq, Debug)]
-pub enum OccurenceKind {
-    File,
-    Dir,
-    TextFile,
+pub struct OccurenceData {
+    pub path: PathBuf,
 }
 
-pub struct Occurence {
-    pub path: PathBuf,
-    pub kind: OccurenceKind,
+pub enum Occurence {
+    File(OccurenceData),
+    Dir(OccurenceData),
+    TextFile(OccurenceData),
+}
+
+fn get_occurence_path(occ: &Occurence) -> &PathBuf {
+    match occ {
+        Occurence::File(data) => &data.path,
+        Occurence::Dir(data) => &data.path,
+        Occurence::TextFile(data) => &data.path
+    }
 }
 
 pub struct Context {
@@ -82,22 +88,13 @@ impl FindProcess {
                 }
             }
             if name == filename {
-                let cur_filename = file.as_path().to_str().unwrap();
+                let cur_filename: &str = file.as_path().to_str().unwrap();
                 if self.fs.is_dir(file.as_path()) {
-                    result.push(Occurence {
-                        path: file,
-                        kind: OccurenceKind::Dir,
-                    })
+                    result.push(Occurence::Dir(OccurenceData{path: file}));
                 } else if cur_filename.ends_with(".txt") {
-                    result.push(Occurence {
-                        path: file,
-                        kind: OccurenceKind::TextFile,
-                    });
+                    result.push(Occurence::TextFile(OccurenceData{path: file}));
                 } else {
-                    result.push(Occurence {
-                        path: file,
-                        kind: OccurenceKind::File,
-                    });
+                    result.push(Occurence::File(OccurenceData{path: file}));
                 }
             }
         }
@@ -120,7 +117,9 @@ pub struct SortStrategy {}
 
 impl PostProcessStrategy for SortStrategy {
     fn post_process(&mut self, context: &mut Context) -> Result<(), String> {
-        sort::sort(&mut context.files, &|a, b| a.path < b.path);
+        sort::sort(&mut context.files, &|a, b|
+            get_occurence_path(a) < get_occurence_path(b)
+        );
         Ok(())
     }
 }
@@ -148,7 +147,8 @@ impl PrintStrategy for PrintFileStrategy {
         };
 
         context.files.iter().for_each(move |file| {
-            let fullpath = fs::canonicalize(file.path.clone()).unwrap_or_default();
+            let path = get_occurence_path(file);
+            let fullpath = fs::canonicalize(path).unwrap_or_default();
             match writeln!(out, "{}", fullpath.display()) {
                 Ok(_) => (),
                 Err(err) => {
@@ -165,7 +165,7 @@ pub struct PrintConsoleStrategy {}
 impl PrintStrategy for PrintConsoleStrategy {
     fn print(&mut self, context: &mut Context) -> Result<(), String> {
         context.files.iter().for_each(move |file| {
-            let fullpath = fs::canonicalize(file.path.clone()).unwrap_or_default();
+            let fullpath = fs::canonicalize(get_occurence_path(file)).unwrap_or_default();
             println!("{}", fullpath.display());
         });
         Ok(())
@@ -179,16 +179,16 @@ pub struct InTextFileFilter {
 impl PostProcessStrategy for InTextFileFilter {
   fn post_process(&mut self, context: &mut Context) -> Result<(), String> {
       context.files.retain(|occurence| {
-          if occurence.kind != OccurenceKind::TextFile {
-              return false;
-          }
-
-          match fs::read_to_string(&occurence.path) {
-              Ok(data) => data.contains(&self.content),
-              Err(err) => {
-                  warn!("Failed to read file {}: {}", occurence.path.display(), err);
-                  false
-              }
+          if let Occurence::TextFile(data) = occurence {
+            match fs::read_to_string(&data.path) {
+                Ok(data) => data.contains(&self.content),
+                Err(err) => {
+                    warn!("Failed to read file {}: {}", data.path.display(), err);
+                    false
+                }
+            }
+          } else {
+            return false;
           }
       });
 
